@@ -29,9 +29,9 @@ unsigned int localPort = 8888;  // local port to listen for UDP packets
 MFRC522 rfid(CS_RFID, RST_RFID);
 MFRC522::MIFARE_Key key;
 int id[No_of_Cards][4] = {
-  {115, 79, 50, 59},     // mas fred
-  {254, 97, 164, 133},  // ko kris
-  {153, 69, 21, 219}    // dwi
+  {[idHere], [idHere], [idHere], [idHere]},
+  {[idHere], [idHere], [idHere], [idHere]},
+  {[idHere], [idHere], [idHere], [idHere]}
 };
 String IDName;
 int id_temp[1][4];
@@ -222,7 +222,7 @@ void logCard(bool checkInOut) {
       Serial.println("Connected");
 
     // concantenate into a string for sending to google sheets
-    client.print("GET /pushingbox?devid=v7CD4249E4D85245&Lembar=");
+    client.print("GET /pushingbox?devid=[idHere]&Lembar=");
     if (checkInOut == true)
       client.print('1');
     else
