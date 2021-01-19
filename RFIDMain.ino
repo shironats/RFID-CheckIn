@@ -1,11 +1,25 @@
-#include <LiquidCrystal.h>  // for LCD
-#include <MFRC522.h>        // for the RFID
-#include <SPI.h>            // for the RFID and RTC
-#include <TimeLib.h>        // for RTC
+#include <LiquidCrystal.h>  // for LCD (LiquidCrystal by Arduino, Adafruit (v.1.0.7))
+#include <MFRC522.h>        // for RFID (MFRC522 by GithubCommunity (v.1.4.7))
+#include <SPI.h>            // for RFID and RTC
+#include <TimeLib.h>        // for RTC (Time by Michael Margolis (v.1.6.0))
 #include <EthernetUdp.h>    // for RTC
-#include <Ethernet.h>       // for ethernet shield
+#include <Ethernet.h>       // for ethernet shield (Ethernet by VARIOUS (v.2.0.0))
 
+//================ Important variables ==============
+#define No_of_Cards 3
 bool LCDFlag = true;
+int id[No_of_Cards][4] = {
+  {[idHere], [idHere], [idHere], [idHere]},
+  {[idHere], [idHere], [idHere], [idHere]},
+  {[idHere], [idHere], [idHere], [idHere]}
+};
+String userName[No_of_Cards] = {
+  "[idHere]",
+  "[idHere]",
+  "[idHere]"
+};
+String devID = "[idHere]";
+//================ Important variables ==============
 
 //LCD
 LiquidCrystal lcd(3, 2, A0, A1, A2, A3);
@@ -23,19 +37,13 @@ EthernetUDP Udp;
 unsigned int localPort = 8888;  // local port to listen for UDP packets
 
 //RFID
-#define CS_RFID 4
-#define RST_RFID 9
-#define No_of_Cards 3
+#define CS_RFID 4   //pin 4
+#define RST_RFID 9  //pin 9
 MFRC522 rfid(CS_RFID, RST_RFID);
 MFRC522::MIFARE_Key key;
-int id[No_of_Cards][4] = {
-  {[idHere], [idHere], [idHere], [idHere]},
-  {[idHere], [idHere], [idHere], [idHere]},
-  {[idHere], [idHere], [idHere], [idHere]}
-};
 String IDName;
 int id_temp[1][4];
-bool checkInStatus[3] = {false, false, false};
+bool checkInStatus[No_of_Cards] = {false, false, false};
 
 // time information
 const int checkInHour = 9;
@@ -167,23 +175,8 @@ bool verifyUserCheckIn() {
         {
           if (id[i][3] == id_temp[0][3])
           {
-            switch (i) {
-              case 0:
-                IDName = "Yohanes Fredhi";
-                break;
+            IDName = userName[i];
 
-              case 1:
-                IDName = "Nova Kristian";
-                break;
-
-              case 2:
-                IDName = "Dwi Karuna";
-                break;
-
-              default:
-                IDName = "Unknown";
-                break;
-            }
             // Save check in time;
             userCheckInHour = hour();
             userCheckInMinute = minute();
@@ -222,7 +215,9 @@ void logCard(bool checkInOut) {
       Serial.println("Connected");
 
     // concantenate into a string for sending to google sheets
-    client.print("GET /pushingbox?devid=[idHere]&Lembar=");
+    client.print("GET /pushingbox?devid=");
+    client.print(devID);
+    client.print("&Lembar=");
     if (checkInOut == true)
       client.print('1');
     else
