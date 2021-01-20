@@ -29,6 +29,7 @@ byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 IPAddress ip(192, 168, 0, 108);
 EthernetClient client;
 char server[] = "api.pushingbox.com";
+bool uploadStatus = false;
 
 // Online RTC
 IPAddress timeServer(203, 160, 128, 3);   // google "ntp server ip address indonesia"
@@ -42,17 +43,15 @@ unsigned int localPort = 8888;  // local port to listen for UDP packets
 MFRC522 rfid(CS_RFID, RST_RFID);
 MFRC522::MIFARE_Key key;
 String IDName;
+int poi = 99;   // Person Of Interest (used in verifyUserCheckin)
 int id_temp[1][4];
 bool checkInStatus[No_of_Cards] = {false, false, false};
 
 // time information
-const int checkInHour = 9;
-const int checkInMinute = 5;
+#define checkInHour 9
+#define checkInMinute 5
 int userCheckInHour;
 int userCheckInMinute;
-
-void logCard(bool checkInOut);
-void message(bool checkIn, bool isLate = false);
 
 void setup() {
 
@@ -119,25 +118,24 @@ void loop() {
   //look for new cards
   if (rfid.PICC_IsNewCardPresent())
   {
+    uploadStatus = false;
+    poi = 99;
     // reads card ID and checks if user is in database
     readRFID();
-    if (verifyUserCheckIn())
-    {
-      // sends card check (in/out) log to google sheets
-      logCard(true);
+    /*  sends card check (in/out) log to google sheets
 
-      // checks if user is late to work
-      if (!verifyLate())
-        message(true);
-      else
-        message(true, true);
-    }
-    // if card ID is not in database
-    else
-    {
-      logCard(false);
-      message(false);
-    }
+        logCard arg: true  == check in to work
+                     false == check out of work
+    */
+    logCard(verifyUserCheckIn());
+
+    if (uploadStatus)
+      /*  sends message to serial/lcd
+
+          message arg: true  == check in to work  || true  == is late
+                       false == check out of work || false == is NOT late
+      */
+      message(verifyUserCheckIn(), verifyLate());
     rfid.PICC_HaltA();
     rfid.PCD_StopCrypto1();
   }
@@ -159,7 +157,7 @@ void readRFID() {
   for (int i = 0; i < 4; i++)
     id_temp[0][i] = rfid.uid.uidByte[i];
 
-  delay(2000);
+  delay(500);
 }
 
 bool verifyUserCheckIn() {
@@ -176,23 +174,14 @@ bool verifyUserCheckIn() {
           if (id[i][3] == id_temp[0][3])
           {
             IDName = userName[i];
+            // Person Of Interest
+            poi = i;
 
             // Save check in time;
             userCheckInHour = hour();
             userCheckInMinute = minute();
 
-            // if going to work
-            if (checkInStatus[i] == false)
-            {
-              checkInStatus[i] = true;
-              return true;
-            }
-            // if going home
-            else if (checkInStatus[i] == true)
-            {
-              checkInStatus[i] = false;
-              return false;
-            }
+            return !checkInStatus[i];
           }
         }
       }
@@ -201,27 +190,19 @@ bool verifyUserCheckIn() {
   return false;
 }
 
-bool verifyLate() {
-  if ((userCheckInHour < checkInHour) || ((userCheckInHour == checkInHour) && (userCheckInMinute <= checkInMinute)))
-    return false;
-  else
-    return true;
-}
 
 void logCard(bool checkInOut) {
   // connects to internet
   if (client.connect(server, 80)) {
-    if (!LCDFlag)
-      Serial.println("Connected");
 
-    // concantenate into a string for sending to google sheets
+    // concantenate into a string for sending request to google sheets
     client.print("GET /pushingbox?devid=");
     client.print(devID);
     client.print("&Lembar=");
-    if (checkInOut == true)
-      client.print('1');
-    else
-      client.print('2');
+    if (checkInOut) // checking in
+      client.print("1");
+    else            // checking out
+      client.print("2");
     client.print("&IDNum=");
     for (int i = 0; i < 4; i++)
       client.print(rfid.uid.uidByte[i]);
@@ -254,18 +235,33 @@ void logCard(bool checkInOut) {
     else
       Serial.println("Uploaded...");
 
-    delay(2000);
+    checkInStatus[poi] = !checkInOut;
+    uploadStatus = true;
+    delay(1000);
   }
   // failed to create connection
   else {
     if (LCDFlag) {
       lcd.clear();
       lcd.print("Upload failed");
+      lcd.setCursor(0, 1);
+      lcd.print("Please try again");
+      delay(1000);
+      lcd.clear();
+      lcd.print("Put RFID to Scan");
     }
     else
-      Serial.println("Connection failed");
-    delay(2000);
+      Serial.println("Connection failed\nTry again\nPut RFID to scan");
   }
+}
+
+bool verifyLate() {
+  // if on time
+  if ((userCheckInHour < checkInHour) || ((userCheckInHour == checkInHour) && (userCheckInMinute <= checkInMinute)))
+    return false;
+  // if late
+  else
+    return true;
 }
 
 void message(bool checkIn, bool isLate) {
@@ -288,7 +284,6 @@ void message(bool checkIn, bool isLate) {
       else {
         Serial.println("Welcome");
         Serial.println(IDName);
-        delay(3000);
         Serial.println("Put RFID to scan");
       }
     }
@@ -307,7 +302,6 @@ void message(bool checkIn, bool isLate) {
       else {
         Serial.println("You are late");
         Serial.println(IDName);
-        delay(3000);
         Serial.println("Put RFID to scan");
       }
     }
@@ -327,7 +321,6 @@ void message(bool checkIn, bool isLate) {
     else {
       Serial.println("Goodbye");
       Serial.println(IDName);
-      delay(3000);
       Serial.println("Put RFID to scan");
     }
   }
