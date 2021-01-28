@@ -116,7 +116,7 @@ void loop() {
   Ethernet.maintain();
 
   //look for new cards
-  if (rfid.PICC_IsNewCardPresent())
+  if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial())
   {
     uploadStatus = false;
     poi = 99;
@@ -135,7 +135,7 @@ void loop() {
           message arg: true  == check in to work  || true  == is late
                        false == check out of work || false == is NOT late
       */
-      message(verifyUserCheckIn(), verifyLate());
+      message(!verifyUserCheckIn(), verifyLate());
     rfid.PICC_HaltA();
     rfid.PCD_StopCrypto1();
   }
@@ -150,8 +150,8 @@ void readRFID() {
   else
     Serial.println("Reading card");
 
-  // read card ID
-  rfid.PICC_ReadCardSerial();
+//  // read card ID
+//  rfid.PICC_ReadCardSerial();
 
   // saves card ID to array for use in verifyUserCheckIn()
   for (int i = 0; i < 4; i++)
@@ -235,7 +235,7 @@ void logCard(bool checkInOut) {
     else
       Serial.println("Uploaded...");
 
-    checkInStatus[poi] = !checkInOut;
+    checkInStatus[poi] = checkInOut;
     uploadStatus = true;
     delay(1000);
   }
