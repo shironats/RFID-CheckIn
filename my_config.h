@@ -11,16 +11,16 @@
 //================ Important variables ==============
 #define NO_OF_CARDS 3
 bool LCDFlag = true;
-String devID = "v7CD4249E4D85245";
+String devID = "myStringHere";
 int id[NO_OF_CARDS][4] = {
-  {115, 79, 50, 59},     // mas fred
-  {254, 97, 164, 133},  // ko kris
-  {122, 52, 21, 43}    // dwi
+  {[Number], [Number], [Number], [Number]},
+  {[Number], [Number], [Number], [Number]},
+  {[Number], [Number], [Number], [Number]}
 };
 String userName[NO_OF_CARDS] = {
-  "Yohanes Fredhi",
-  "Nova Kristian",
-  "Dwi Karuna"
+  "[Name]",
+  "[Name]",
+  "[Name]"
 };
 
 //================ Important variables ==============
