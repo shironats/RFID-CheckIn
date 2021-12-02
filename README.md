@@ -9,4 +9,3 @@ Required libraries include:
 - https://www.arduino.cc/en/Reference/Ethernet
 - https://www.arduino.cc/en/Reference/LiquidCrystal
 - https://github.com/miguelbalboa/rfid
-- https://playground.arduino.cc/Code/Time/
