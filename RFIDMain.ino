@@ -31,19 +31,6 @@ void setup() {
     Ethernet.begin(mac, ip);
   }
 
-  // setup connection to receive time packets
-  Udp.begin(localPort);
-  setSyncProvider(getNtpTime);
-
-  // Checks if time is set
-  if (timeStatus() != timeNotSet) {
-    if (LCDFlag) {
-      lcd.clear();
-      lcd.print("RTC connected");
-    }
-    else
-      Serial.println("RTC connected");
-  }
   // Initialization done
   if (LCDFlag) {
     lcd.clear();
@@ -79,8 +66,14 @@ void loop() {
             message arg: true  == check in to work  || true  == is late
                          false == check out of work || false == is NOT late
         */
-        message(!verifyUserCheckIn(), verifyLate());
+        message(!verifyUserCheckIn());
     }
+    if (LCDFlag) {
+      lcd.clear();
+      lcd.print("Put RFID to scan");
+    }
+    else
+      Serial.println("Put RFID to scan");
     rfid.PICC_HaltA();
     rfid.PCD_StopCrypto1();
   }
