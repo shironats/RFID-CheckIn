@@ -24,10 +24,6 @@ bool verifyUserCheckIn() {
       // Person Of Interest
       poi = i;
 
-      // Save check in time;
-      userCheckInHour = hour();
-      userCheckInMinute = minute();
-
       return !checkInStatus[i];
     }
   }
@@ -61,21 +57,6 @@ void logCard(bool checkInOut) {
     // display time and upload confirmation
     if (LCDFlag) {
       lcd.clear();
-      lcd.print(day());
-      lcd.print('/');
-      lcd.print(month());
-      lcd.print('/');
-      lcd.print(year());
-      
-      lcd.setCursor(10, 0);
-      if (hour() < 10)
-        lcd.print('0');
-      lcd.print(hour());
-      lcd.print(':');
-      if (minute() < 10)
-        lcd.print('0');
-      lcd.print(minute());
-      lcd.setCursor(0, 1);
       lcd.print("Uploaded...");
     }
     else
@@ -102,55 +83,20 @@ void logCard(bool checkInOut) {
   }
 }
 
-bool verifyLate() {
-  // if on time
-  if ((userCheckInHour < CHECK_IN_HOUR) || ((userCheckInHour == CHECK_IN_HOUR) && (userCheckInMinute <= CHECK_IN_MINUTE)))
-    return false;
-  // if late
-  else
-    return true;
-}
-
-void message(bool checkIn, bool isLate) {
+void message(bool checkIn) {
   // if going to work
   if (checkIn)
   {
-    // if not late
-    if (!isLate)
-    {
-
-      if (LCDFlag) {
-        lcd.clear();
-        lcd.print("Welcome");
-        lcd.setCursor(0, 1);
-        lcd.print(IDName);
-        delay(3000);
-        lcd.clear();
-        lcd.print("Put RFID to scan");
-      }
-      else {
-        Serial.println("Welcome");
-        Serial.println(IDName);
-        Serial.println("Put RFID to scan");
-      }
+    if (LCDFlag) {
+      lcd.clear();
+      lcd.print("Welcome");
+      lcd.setCursor(0, 1);
+      lcd.print(IDName);
+      delay(1500);
     }
-    // if late
-    else
-    {
-      if (LCDFlag) {
-        lcd.clear();
-        lcd.print("You are late");
-        lcd.setCursor(0, 1);
-        lcd.print(IDName);
-        delay(3000);
-        lcd.clear();
-        lcd.print("Put RFID to scan");
-      }
-      else {
-        Serial.println("You are late");
-        Serial.println(IDName);
-        Serial.println("Put RFID to scan");
-      }
+    else {
+      Serial.println("Welcome");
+      Serial.println(IDName);
     }
   }
   // if going home
@@ -161,38 +107,11 @@ void message(bool checkIn, bool isLate) {
       lcd.print("Goodbye");
       lcd.setCursor(0, 1);
       lcd.print(IDName);
-      delay(3000);
-      lcd.clear();
-      lcd.print("Put RFID to scan");
+      delay(1500);
     }
     else {
       Serial.println("Goodbye");
       Serial.println(IDName);
-      Serial.println("Put RFID to scan");
     }
   }
-}
-
-/*-------- NTP code ----------*/
-// send an NTP request to the time server at the given address
-void sendNTPpacket(const char * address) {
-  // set all bytes in the buffer to 0
-  memset(packetBuffer, 0, NTP_PACKET_SIZE);
-  // Initialize values needed to form NTP request
-  // (see URL above for details on the packets)
-  packetBuffer[0] = 0b11100011;   // LI, Version, Mode
-  packetBuffer[1] = 0;     // Stratum, or type of clock
-  packetBuffer[2] = 6;     // Polling Interval
-  packetBuffer[3] = 0xEC;  // Peer Clock Precision
-  // 8 bytes of zero for Root Delay & Root Dispersion
-  packetBuffer[12]  = 49;
-  packetBuffer[13]  = 0x4E;
-  packetBuffer[14]  = 49;
-  packetBuffer[15]  = 52;
-
-  // all NTP fields have been given values, now
-  // you can send a packet requesting a timestamp:
-  Udp.beginPacket(address, 123); // NTP requests are to port 123
-  Udp.write(packetBuffer, NTP_PACKET_SIZE);
-  Udp.endPacket();
 }
